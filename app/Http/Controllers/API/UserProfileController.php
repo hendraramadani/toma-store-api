@@ -8,7 +8,6 @@ use App\Models\User;
 
 class UserProfileController extends Controller
 {
-
     public function getUser(Request $request){
         $user = User::where('role_id','=',3)->get();
         return response()->json($user, 200);
@@ -26,16 +25,13 @@ class UserProfileController extends Controller
         $user->email=$user_email;
         $user->address=$user_address;
         $user->save();
-        
+
         return response()->json(array($user), 201);
     }
     public function getUserProfile(Request $request){
         $user_id = $request->get("user_id");
-
         $user = User::find($user_id);
-
         return response()->json(array($user), 200);
-
     }
 
     public function updateUserProfile(Request $request){
