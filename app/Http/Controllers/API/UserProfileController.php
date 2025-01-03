@@ -36,20 +36,14 @@ class UserProfileController extends Controller
 
     public function updateUserProfile(Request $request){
         $user_id = $request->get("user_id");
-
         $user = User::find($user_id);
-
-        
-
     }
 
     public function updateUserAddress(Request $request){
         $user_id = $request->get("user_id");
-
         $user = User::find($user_id);
         $user->address = $request->get("user_address");
         $user->save();
-        
         return response()->json(array($user), 200);
 
     }

@@ -24,8 +24,8 @@ class DatabaseSeeder extends Seeder
         DB::table("product_categories")->insert(['name'=>'Minuman', 'created_at'=>now(), 'updated_at'=>now()]);
 
         DB::table("users")->insert(['name'=>'Admin', 'email'=>'admin@mail.com', 'phone'=>'081230275840','password'=>Hash::make('admin'),'role_id'=>'1', 'created_at'=>now(), 'updated_at'=>now()]);
-        DB::table("users")->insert(['name'=>'Courier', 'email'=>'courier@mail.com', 'phone'=>'081230275840','password'=>Hash::make('courier'),'role_id'=>'2', 'created_at'=>now(), 'updated_at'=>now()]);
-        DB::table("users")->insert(['name'=>'User', 'email'=>'user@mail.com', 'phone'=>'081230275840','password'=>Hash::make('user'),'role_id'=>'3', 'created_at'=>now(), 'updated_at'=>now()]);
+        // DB::table("users")->insert(['name'=>'Courier', 'email'=>'courier@mail.com', 'phone'=>'081230275840','password'=>Hash::make('courier'),'role_id'=>'2', 'created_at'=>now(), 'updated_at'=>now()]);
+        // DB::table("users")->insert(['name'=>'User', 'email'=>'user@mail.com', 'phone'=>'081230275840','password'=>Hash::make('user'),'role_id'=>'3', 'created_at'=>now(), 'updated_at'=>now()]);
 
         DB::table("courier_status_actives")->insert(['status'=>'Aktif', 'created_at'=>now(), 'updated_at'=>now()]);
         DB::table("courier_status_actives")->insert(['status'=>'Non-Aktif', 'created_at'=>now(), 'updated_at'=>now()]);
@@ -40,8 +40,8 @@ class DatabaseSeeder extends Seeder
         DB::table("status_orders")->insert(['status'=>'Pesanan Selesai', 'created_at'=>now(), 'updated_at'=>now()]);
         DB::table("status_orders")->insert(['status'=>'Pesanan Dibatalkan', 'created_at'=>now(), 'updated_at'=>now()]);
 
-        DB::table("stores")->insert(['name'=>'Hendra Store', 'phone'=>'081230275840','address'=>'Kalangbret','latitude'=>'-8.049328737865013','longitude'=>'111.86482451286015', 'created_at'=>now(), 'updated_at'=>now()]);
+        // DB::table("stores")->insert(['name'=>'Hendra Store', 'phone'=>'081230275840','address'=>'Kalangbret','latitude'=>'-8.049328737865013','longitude'=>'111.86482451286015', 'created_at'=>now(), 'updated_at'=>now()]);
     
-        DB::table("couriers")->insert(['user_id'=>2,'courier_status_active_id'=>1,'courier_status_available_id'=>3, 'created_at'=>now(), 'updated_at'=>now()]);
+        // DB::table("couriers")->insert(['user_id'=>2,'courier_status_active_id'=>1,'courier_status_available_id'=>3, 'created_at'=>now(), 'updated_at'=>now()]);
     }
 }
