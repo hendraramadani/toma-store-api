@@ -9,6 +9,8 @@ use App\Models\User;
 use App\Models\Courier;
 use App\Models\Order;
 use App\Models\OrderDetail;
+use App\Models\StatusOrder;
+
 class CourierController extends Controller
 {
     public function index(){
@@ -70,8 +72,8 @@ class CourierController extends Controller
         $order = Order::where('courier_id', '=', null)->where('status_order_id','=',value: 3)
         ->leftJoin('users', 'orders.user_id', '=', 'users.id')
         ->leftJoin('status_orders', 'orders.status_order_id', '=', 'status_orders.id')
-        ->orderBy('orders.id', 'asc')
-        ->select('orders.*', 'users.name','users.address','status_orders.status')
+        ->orderBy('orders.id', 'desc')
+        ->select('orders.*', 'users.name','users.address','users.phone as user_phone','status_orders.status')
         ->get();
 
 
@@ -79,6 +81,7 @@ class CourierController extends Controller
             $orderdetail = OrderDetail::where('orders_id', '=', $index->id)
             ->leftJoin('products', 'orders_detail.product_id', '=', 'products.id')
             ->leftJoin('stores', 'products.store_id', '=', 'stores.id')
+            ->orderBy('stores.id', 'asc')
             ->select('orders_detail.*', 'products.name as product_name', 'stores.name as store_name',
                     DB::raw("CONCAT('$public_storage',`products`.`image`)  AS product_image"))
                     ->orderBy('store_name', 'desc')
@@ -99,12 +102,32 @@ class CourierController extends Controller
         $order_id = $request->get('order_id');
 
         $response = Order::findOrFail($order_id);
+        
         $response->courier_id = (int)$courier_id;
         $response->status_order_id = 1;
         $response->save();
 
+        $userData = User::where('users.id','=',$response->user_id)->get();
+        // dd($userData[0]['phone']);
+        $courierData = Courier::where('couriers.id','=',$courier_id)
+        ->leftJoin('users','couriers.user_id','=','users.id')
+        ->select('users.name','users.phone')
+        ->get();
+        $statusData = StatusOrder::where('id','=',1)->get();
+        
+        $dest_phone= $userData[0]['phone'];
+        $invoice_id = $response->id;
+        $courier_name=$courierData[0]['name'];
+        $courier_phone=$courierData[0]['phone'];
+        $status_pesanan=$statusData[0]['status'];
+        $total_harga = $response->total_cost;
 
-        return response()->json($response
+        
+        $this->send_whatsapp_notification_from_admin($dest_phone,$invoice_id,
+        $courier_name,$courier_phone,$status_pesanan,$total_harga);
+
+
+        return response()->json($courierData
         , 201);
     }
 
@@ -119,8 +142,8 @@ class CourierController extends Controller
         $order = Order::where('courier_id', '=', $courier_id)->where('status_order_id','!=',value: 4)
         ->leftJoin('users', 'orders.user_id', '=', 'users.id')
         ->leftJoin('status_orders', 'orders.status_order_id', '=', 'status_orders.id')
-        ->orderBy('orders.id', 'asc')
-        ->select('orders.*', 'users.name','users.address','status_orders.status')
+        ->orderBy('orders.id', 'desc')
+        ->select('orders.*', 'users.name','users.address','users.phone as user_phone','status_orders.status')
         ->get();
 
 
@@ -128,6 +151,7 @@ class CourierController extends Controller
             $orderdetail = OrderDetail::where('orders_id', '=', $index->id)
             ->leftJoin('products', 'orders_detail.product_id', '=', 'products.id')
             ->leftJoin('stores', 'products.store_id', '=', 'stores.id')
+            ->orderBy('stores.id', 'asc')
             ->select('orders_detail.*', 'products.name as product_name', 'stores.name as store_name',
                     DB::raw("CONCAT('$public_storage',`products`.`image`)  AS product_image"))
                     ->orderBy('store_name', 'desc')
@@ -145,10 +169,31 @@ class CourierController extends Controller
 
     public function deliverOrderCourier(Request $request){
         $order_id = $request->get('order_id');
+        $courier_id = $request->get('courier_id');
+        
 
         $response = Order::findOrFail($order_id);
         $response->status_order_id = 2;
         $response->save();
+
+        $userData = User::where('users.id','=',$response->user_id)->get();
+        // dd($userData[0]['phone']);
+        $courierData = Courier::where('couriers.id','=',$courier_id)
+        ->leftJoin('users','couriers.user_id','=','users.id')
+        ->select('users.name','users.phone')
+        ->get();
+        $statusData = StatusOrder::where('id','=',2)->get();
+        
+        $dest_phone= $userData[0]['phone'];
+        $invoice_id = $response->id;
+        $courier_name=$courierData[0]['name'];
+        $courier_phone=$courierData[0]['phone'];
+        $status_pesanan=$statusData[0]['status'];
+        $total_harga = $response->total_cost;
+
+        
+        $this->send_whatsapp_notification_from_admin($dest_phone,$invoice_id,
+        $courier_name,$courier_phone,$status_pesanan,$total_harga);
 
 
         return response()->json($response
@@ -163,6 +208,16 @@ class CourierController extends Controller
         $response->status_order_id = 3;
         $response->save();
 
+        $userData = User::where('users.id','=',$response->user_id)->get();
+        // dd($userData[0]['phone']);
+
+        $statusData = StatusOrder::where('id','=',5)->get();
+        
+        $dest_phone= $userData[0]['phone'];
+        $invoice_id = $response->id;
+        $status_pesanan=$statusData[0]['status'];
+
+        $this->send_whatsapp_notification_from_admin_delete($dest_phone,$invoice_id,$status_pesanan);
 
         return response()->json($response
         , 201);
@@ -178,8 +233,8 @@ class CourierController extends Controller
         $order = Order::where('courier_id', '=', $courier_id)->where('status_order_id','=',value: 4)
         ->leftJoin('users', 'orders.user_id', '=', 'users.id')
         ->leftJoin('status_orders', 'orders.status_order_id', '=', 'status_orders.id')
-        ->orderBy('orders.id', 'asc')
-        ->select('orders.*', 'users.name','users.address','status_orders.status')
+        ->orderBy('orders.id', 'desc')
+        ->select('orders.*', 'users.name','users.address','users.phone as user_phone','status_orders.status')
         ->get();
 
 
@@ -187,6 +242,7 @@ class CourierController extends Controller
             $orderdetail = OrderDetail::where('orders_id', '=', $index->id)
             ->leftJoin('products', 'orders_detail.product_id', '=', 'products.id')
             ->leftJoin('stores', 'products.store_id', '=', 'stores.id')
+            ->orderBy('stores.id', 'asc')
             ->select('orders_detail.*', 'products.name as product_name', 'stores.name as store_name',
                     DB::raw("CONCAT('$public_storage',`products`.`image`)  AS product_image"))
                     ->orderBy('store_name', 'desc')
@@ -211,4 +267,97 @@ class CourierController extends Controller
         return response()->json($response
         , 201);
     }
+
+
+    public function send_whatsapp_notification_from_admin($dest_phone,$invoice_id,$courier_name,$courier_phone,$status_pesanan,$total_harga){
+
+        // $token = config('const.whatsapp_apikey');
+        $token = "7PVRqfihfZpNwZgeMFVb";
+        $target = $dest_phone; //dinamis
+
+
+        $msg = '*NOTIFIKASI PENGANTARAN PESANAN TOMA STORE*'.'
+
+*Invoice* #'.$invoice_id.'  '.'
+    
+*Status Pesanan :* '.$status_pesanan.'  '.'
+*Kurir :* '.$courier_name.'  '.'( '.$courier_phone.' )'.'
+
+*Total Harga :* '.$total_harga.'  '.'
+    
+_Pesan ini dikirim dari sistem admin. Balas pesan ini hanya jika ada pertanyan !_'
+    ;
+        $curl = curl_init();
+    
+        curl_setopt_array($curl, array(
+        CURLOPT_URL => 'https://api.fonnte.com/send',
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => '',
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 0,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => 'POST',
+        CURLOPT_POSTFIELDS => array(
+        'target' => $target,
+        'message' => $msg, ///dinamis alamat yang diadu
+        ),
+        CURLOPT_HTTPHEADER => array(
+            "Authorization: $token"
+        ),
+        ));
+    
+        $response = curl_exec($curl);
+    
+        curl_close($curl);
+    
+        return $response;
+    
+        }
+
+
+    public function send_whatsapp_notification_from_admin_delete($dest_phone,$invoice_id,$status_pesanan){
+
+        // $token = config('const.whatsapp_apikey');
+        $token = "7PVRqfihfZpNwZgeMFVb";
+        $target = $dest_phone; //dinamis
+
+
+        $msg = '*NOTIFIKASI PENGANTARAN PESANAN TOMA STORE*'.'
+
+*Invoice* #'.$invoice_id.'  '.'
+    
+*Status Pesanan :* '.$status_pesanan.'  Kurir'.'
+   
+Pesanan dibatalkan kurir, silahkan tunggu kurir selanjutnya mengambil pesanan anda.
+
+_Pesan ini dikirim dari sistem admin. Balas pesan ini hanya jika ada pertanyan !_'
+    ;
+        $curl = curl_init();
+    
+        curl_setopt_array($curl, array(
+        CURLOPT_URL => 'https://api.fonnte.com/send',
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => '',
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 0,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => 'POST',
+        CURLOPT_POSTFIELDS => array(
+        'target' => $target,
+        'message' => $msg, ///dinamis alamat yang diadu
+        ),
+        CURLOPT_HTTPHEADER => array(
+            "Authorization: $token"
+        ),
+        ));
+    
+        $response = curl_exec($curl);
+    
+        curl_close($curl);
+    
+        return $response;
+    
+        }
 }

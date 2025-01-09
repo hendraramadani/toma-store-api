@@ -52,6 +52,7 @@ Route::middleware('auth:sanctum')->group( callback: function () {
     Route::post('/doneuserorder', [OrderController::class, 'doneOrderUser']);
     Route::post('/canceluserorder', [OrderController::class, 'cancelOrderUser']);
     Route::get('/getadminorder', [OrderController::class, 'getAdminOrder']);
+    Route::get('/getadmincountorder', [OrderController::class, 'getCountOrdersByMonth']);
     
 
     Route::post('/getuserprofile', [UserProfileController::class, 'getUserProfile']);

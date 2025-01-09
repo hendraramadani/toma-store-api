@@ -10,6 +10,7 @@ use App\Models\TemporaryCart;
 use App\Models\User;
 use App\Models\Product;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class OrderController extends Controller
 {
@@ -72,13 +73,15 @@ class OrderController extends Controller
         ->leftJoin('couriers as c', 'orders.courier_id', '=', 'c.id')
         ->leftJoin('users as u', 'c.user_id', '=', 'u.id')
         ->orderBy('orders.id', 'DESC')
-        ->select('orders.*', 'u.name as courier_name','users.name','users.address','status_orders.status')
+        ->select('orders.*', 'u.name as courier_name','u.phone as courier_phone','users.name','users.address','status_orders.status')
         ->get();
         // dd($order);
         foreach( $order as $key=>$index) {
             $orderdetail = OrderDetail::where('orders_id', '=', $index->id)
             ->leftJoin('products', 'orders_detail.product_id', '=', 'products.id')
-            ->select('orders_detail.*', 'products.name as product_name', 
+            ->leftJoin('stores', 'products.store_id', '=', 'stores.id')
+            ->orderBy('stores.id', 'asc')
+            ->select('orders_detail.*', 'products.name as product_name', 'stores.name as store_name',
                     DB::raw("CONCAT('$public_storage',`products`.`image`)  AS product_image"))
             ->get();
             $response[$key]['order'] =  $index;
@@ -132,7 +135,9 @@ class OrderController extends Controller
         foreach( $order as $key=>$index) {
             $orderdetail = OrderDetail::where('orders_id', '=', $index->id)
             ->leftJoin('products', 'orders_detail.product_id', '=', 'products.id')
-            ->select('orders_detail.*', 'products.name as product_name', 
+            ->leftJoin('stores', 'products.store_id', '=', 'stores.id')
+            ->orderBy('stores.id', 'asc')
+            ->select('orders_detail.*', 'products.name as product_name', 'stores.name as store_name',
                     DB::raw("CONCAT('$public_storage',`products`.`image`)  AS product_image"))
             ->get();
             $response[$key]['order'] =  $index;
@@ -143,5 +148,29 @@ class OrderController extends Controller
         return response()->json($response
         , 200);
 
+    }
+
+
+    public function getCountOrdersByMonth(){ //must include year,but hardcoded
+        $year = 2025;
+        
+        
+        // ->groupBy(function($date) {
+        //     //return Carbon::parse($date->created_at)->format('Y'); // grouping by years
+        //     return Carbon::parse($date->created_at)->format('m'); // grouping by months
+        // });
+        $response= array();
+        for ($x = 0; $x < 12; $x++){
+
+            $orderSuccess = Order::where('orders.status_order_id','=',4)->whereYear('created_at', '=', $year)->whereMonth('created_at', '=', $x+1)->count();
+            $orderCancel = Order::where('orders.status_order_id','=',5)->whereYear('created_at', '=', $year)->whereMonth('created_at', '=', $x+1)->count();
+            $idxData = array( $orderSuccess,$orderCancel);
+
+            $response[$x] = $idxData;
+        
+        }
+
+        return response()->json($response
+        , 200);
     }
 }

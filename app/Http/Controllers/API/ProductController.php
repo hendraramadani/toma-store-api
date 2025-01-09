@@ -32,7 +32,7 @@ class ProductController extends Controller
     $response = DB::select( "SELECT `A`.*,CONCAT(:public_storage,`A`.`image`) AS `image_url`, `B`.`name` AS `product_categorie_name`, `C`.`name` AS `store_name` FROM `products` `A`
                                     LEFT OUTER JOIN `product_categories` `B` ON (`A`.`product_categorie_id` = `B`.`id`)
                                     LEFT OUTER JOIN `stores` `C` ON (`A`.`store_id` = `C`.`id`)
-                                    WHERE `B`.`id` IS NOT NULL OR `c`.`id` IS NOT NULL;"
+                                    WHERE `B`.`id` IS NOT NULL OR `C`.`id` IS NOT NULL;"
                                , array(
                                 'public_storage' => config('const.public_storage')) 
                             );
@@ -104,7 +104,13 @@ class ProductController extends Controller
     public function update(Request $request, string $id)
     {
 
-            // store
+            $image = $request->get('image');
+            $image = str_replace('data:image/png;base64,', '', $image);
+            $image = str_replace(' ', '+', $image);
+            $imagePath = 'product'. '/' .Str::random(length: 40).'.'.'png';
+            $image = base64_decode($image);
+            $path = Storage::disk('public')->put($imagePath, $image);    
+
             $product = Product::findOrFail($id);
             $product->name                  = $request->get('name');
             $product->stock                 = $request->get('stock');
@@ -112,6 +118,7 @@ class ProductController extends Controller
             $product->cost                  = $request->get('cost');
             $product->store_id              = $request->get('store_id');
             $product->product_categorie_id  = $request->get('product_categorie_id');
+            $product->image                 = '/'.$imagePath;
             // $product->image                 = $request->get('image');
             
             $product->save();

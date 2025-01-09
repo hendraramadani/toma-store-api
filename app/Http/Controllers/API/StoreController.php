@@ -106,10 +106,18 @@ class StoreController extends Controller
 
         } else {
             // store
+            $image = $request->get('image');
+            $image = str_replace('data:image/png;base64,', '', $image);
+            $image = str_replace(' ', '+', $image);
+            $imagePath = 'product'. '/' .Str::random(length: 40).'.'.'png';
+            $image = base64_decode($image);
+            $path = Storage::disk('public')->put($imagePath, $image);   
+
             $store = Store::findOrFail($id);
             $store->name        = $request->get('name');
             $store->phone       = $request->get('phone');
             $store->address     = $request->get('address');
+            $store->image                 = '/'.$imagePath;
             $store->save();
 
             return response()->json(array($store), 201);
