@@ -16,7 +16,7 @@ class ProductController extends Controller
     {
         $public_storage = config('const.public_storage');
         
-        $list = Product::leftJoin('product_categories','products.product_categorie_id','=','product_categories.id')
+        $list = Product::where('products.deleted_at','=',null)->leftJoin('product_categories','products.product_categorie_id','=','product_categories.id')
         ->leftJoin('stores','products.store_id','=','stores.id')
         ->select('products.*', DB::raw("CONCAT('$public_storage',`products`.`image`)  AS image"),'product_categories.name as product_categorie_name', 'stores.name as store_name')
         ->get();
@@ -32,7 +32,7 @@ class ProductController extends Controller
     $response = DB::select( "SELECT `A`.*,CONCAT(:public_storage,`A`.`image`) AS `image_url`, `B`.`name` AS `product_categorie_name`, `C`.`name` AS `store_name` FROM `products` `A`
                                     LEFT OUTER JOIN `product_categories` `B` ON (`A`.`product_categorie_id` = `B`.`id`)
                                     LEFT OUTER JOIN `stores` `C` ON (`A`.`store_id` = `C`.`id`)
-                                    WHERE `B`.`id` IS NOT NULL OR `C`.`id` IS NOT NULL;"
+                                    WHERE (`B`.`id` IS NOT NULL OR `C`.`id` IS NOT NULL) AND `A`.`deleted_at` IS NULL;"
                                , array(
                                 'public_storage' => config('const.public_storage')) 
                             );
@@ -73,9 +73,9 @@ class ProductController extends Controller
             // dd($path);
             $product = new Product;
             $product->name                  = $request->get('name');
-            $product->stock                 = $request->get('stock');
+            $product->stock                 = preg_replace('/[^0-9]/', '', $request->get('stock'));
             $product->description           = $request->get('description');
-            $product->cost                  = $request->get('cost');
+            $product->cost                  = (int)preg_replace('/[^0-9]/', '', $request->get('cost'));
             $product->product_categorie_id  = (int)$request->get('product_categorie_id');
             $product->image                 = '/'.$imagePath;
             $product->store_id              = (int)$request->get('store_id');
@@ -103,34 +103,36 @@ class ProductController extends Controller
 
     public function update(Request $request, string $id)
     {
-
+            $public_storage = config('const.public_storage');
             $image = $request->get('image');
-            $image = str_replace('data:image/png;base64,', '', $image);
-            $image = str_replace(' ', '+', $image);
-            $imagePath = 'product'. '/' .Str::random(length: 40).'.'.'png';
-            $image = base64_decode($image);
-            $path = Storage::disk('public')->put($imagePath, $image);    
-
             $product = Product::findOrFail($id);
             $product->name                  = $request->get('name');
-            $product->stock                 = $request->get('stock');
+            $product->stock                 = (int)preg_replace('/[^0-9]/', '', $request->get('stock'));
             $product->description           = $request->get('description');
-            $product->cost                  = $request->get('cost');
+            $product->cost                  = (int)preg_replace('/[^0-9]/', '', $request->get('cost'));
             $product->store_id              = $request->get('store_id');
             $product->product_categorie_id  = $request->get('product_categorie_id');
-            $product->image                 = '/'.$imagePath;
-            // $product->image                 = $request->get('image');
-            
-            $product->save();
+            if($image!=null){
+                $image = str_replace('data:image/png;base64,', '', $image);
+                $image = str_replace(' ', '+', $image);
+                $imagePath = 'product'. '/' .Str::random(length: 40).'.'.'png';
+                $image = base64_decode($image);
+                $path = Storage::disk('public')->put($imagePath, $image);  
+                $product->image                 = '/'.$imagePath;
+            }
 
+            $product->save();
+            if($image!=null){
+                $product->image = $public_storage.'/'.$imagePath;
+            }
             return response()->json(array($product), 201);
-        
     }
 
     public function destroy(string $id)
     {
         $product = Product::findOrFail($id);
-        $product->delete();
+        $product->deleted_at = now();
+        $product->save();
 
         return response()->json([
             'status'    => true,

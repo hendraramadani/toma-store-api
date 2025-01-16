@@ -13,6 +13,7 @@ class Order extends Model
         'total_cost',
         'courier_id',
         'status_order_id',
+        'image',
     ];
     protected $casts = [
         'total_cost' => 'int',

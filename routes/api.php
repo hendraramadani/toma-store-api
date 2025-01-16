@@ -71,6 +71,7 @@ Route::middleware('auth:sanctum')->group( callback: function () {
     Route::post('/deliverordercourier', [CourierController::class, 'deliverOrderCourier']);
     Route::post('/cancelordercourier', [CourierController::class, 'cancelOrderCourier']);
     Route::post('/donelistordercourier', [CourierController::class, 'doneListOrderCourier']);
+    Route::post('/updateorderimagecourier', [CourierController::class, 'updateOrderImage']);
 
 
     Route::get('/reportuserall', [ReportController::class, 'reportAllUser']);

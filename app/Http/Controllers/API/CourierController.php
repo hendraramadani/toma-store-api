@@ -10,6 +10,8 @@ use App\Models\Courier;
 use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\StatusOrder;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class CourierController extends Controller
 {
@@ -120,7 +122,7 @@ class CourierController extends Controller
         $courier_name=$courierData[0]['name'];
         $courier_phone=$courierData[0]['phone'];
         $status_pesanan=$statusData[0]['status'];
-        $total_harga = $response->total_cost;
+        $total_harga = "Rp" . number_format($response->total_cost, 2, ",", ".");
 
         
         $this->send_whatsapp_notification_from_admin($dest_phone,$invoice_id,
@@ -143,7 +145,7 @@ class CourierController extends Controller
         ->leftJoin('users', 'orders.user_id', '=', 'users.id')
         ->leftJoin('status_orders', 'orders.status_order_id', '=', 'status_orders.id')
         ->orderBy('orders.id', 'desc')
-        ->select('orders.*', 'users.name','users.address','users.phone as user_phone','status_orders.status')
+        ->select('orders.*',DB::raw("CONCAT('$public_storage',`orders`.`image`)  AS image"), 'users.name','users.address','users.phone as user_phone','status_orders.status')
         ->get();
 
 
@@ -189,7 +191,7 @@ class CourierController extends Controller
         $courier_name=$courierData[0]['name'];
         $courier_phone=$courierData[0]['phone'];
         $status_pesanan=$statusData[0]['status'];
-        $total_harga = $response->total_cost;
+        $total_harga = "Rp" . number_format($response->total_cost, 2, ",", ".");
 
         
         $this->send_whatsapp_notification_from_admin($dest_phone,$invoice_id,
@@ -234,7 +236,7 @@ class CourierController extends Controller
         ->leftJoin('users', 'orders.user_id', '=', 'users.id')
         ->leftJoin('status_orders', 'orders.status_order_id', '=', 'status_orders.id')
         ->orderBy('orders.id', 'desc')
-        ->select('orders.*', 'users.name','users.address','users.phone as user_phone','status_orders.status')
+        ->select('orders.*',DB::raw("CONCAT('$public_storage',`orders`.`image`)  AS image"), 'users.name','users.address','users.phone as user_phone','status_orders.status')
         ->get();
 
 
@@ -268,6 +270,25 @@ class CourierController extends Controller
         , 201);
     }
 
+    public function updateOrderImage(Request $request){
+        $public_storage = config('const.public_storage');
+        $order_id = $request->get('order_id');
+        $image = $request->get('order_image');
+
+        $response = Order::findOrFail($order_id);
+        $image = str_replace('data:image/png;base64,', '', $image);
+        $image = str_replace(' ', '+', $image);
+        $imagePath = 'order'. '/' .Str::random(length: 40).'.'.'png';
+        $image = base64_decode($image);
+        $path = Storage::disk('public')->put($imagePath, $image);  
+        $response->image                 = '/'.$imagePath;
+        $response->save();
+        $response->image = $public_storage.'/'.$imagePath;
+
+        return response()->json(array($response), 201);
+        
+    }
+
 
     public function send_whatsapp_notification_from_admin($dest_phone,$invoice_id,$courier_name,$courier_phone,$status_pesanan,$total_harga){
 
@@ -277,6 +298,11 @@ class CourierController extends Controller
 
 
         $msg = '*NOTIFIKASI PENGANTARAN PESANAN TOMA STORE*'.'
+
+|-------------------------------------------------------------------------------------|       
+   Selesaikan Pembayaran Nominal '.$total_harga.'      
+   Rekening BNI 0971362910 a.n PT TOMA CAHAYA NUSANTARA
+|-------------------------------------------------------------------------------------|
 
 *Invoice* #'.$invoice_id.'  '.'
     
@@ -324,7 +350,7 @@ _Pesan ini dikirim dari sistem admin. Balas pesan ini hanya jika ada pertanyan !
 
 
         $msg = '*NOTIFIKASI PENGANTARAN PESANAN TOMA STORE*'.'
-
+  
 *Invoice* #'.$invoice_id.'  '.'
     
 *Status Pesanan :* '.$status_pesanan.'  Kurir'.'

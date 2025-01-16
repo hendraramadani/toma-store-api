@@ -73,7 +73,7 @@ class OrderController extends Controller
         ->leftJoin('couriers as c', 'orders.courier_id', '=', 'c.id')
         ->leftJoin('users as u', 'c.user_id', '=', 'u.id')
         ->orderBy('orders.id', 'DESC')
-        ->select('orders.*', 'u.name as courier_name','u.phone as courier_phone','users.name','users.address','status_orders.status')
+        ->select('orders.*',DB::raw("CONCAT('$public_storage',`orders`.`image`)  AS image"), 'u.name as courier_name','u.phone as courier_phone','users.name','users.address','status_orders.status')
         ->get();
         // dd($order);
         foreach( $order as $key=>$index) {
@@ -129,7 +129,7 @@ class OrderController extends Controller
         ->leftJoin('couriers as c', 'orders.courier_id', '=', 'c.id')
         ->leftJoin('users as u', 'c.user_id', '=', 'u.id')
         ->orderBy('orders.id', 'DESC')
-        ->select('orders.*', 'u.name as courier_name','users.name','users.address','status_orders.status')
+        ->select('orders.*',DB::raw("CONCAT('$public_storage',`orders`.`image`)  AS image"), 'u.name as courier_name','users.name','users.address','status_orders.status')
         ->get();
         // dd($order);
         foreach( $order as $key=>$index) {

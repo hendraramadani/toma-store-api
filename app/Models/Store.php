@@ -13,5 +13,8 @@ class Store extends Model
         'image',
         'latitude',
         'longitude',
+        'created_at',
+        'updated_at',
+        'deleted_at',
     ];
 }

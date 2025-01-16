@@ -26,10 +26,28 @@
         <tr>
             <td>{{ $user->id }}</td>
             <td>{{ $user->nama }}</td>
-            <td>{{ $user->kurir }}</td>
+            <td>{{ $user->kurir }}
+                <?php
+                if($user->kurir  === null){
+                    echo '-';
+                }else{
+                    echo $user->kurir;
+                }
+                ?>
+            </td>
             <td>{{ $user->status }}</td>
-            <td>{{ $user->total }}</td>
-            <td>{{ $user->dibuat }}</td>
+            <td>
+                <?php
+                $rupiah=number_format($user->total,2,',','.');
+                echo 'Rp '.$rupiah;
+                ?>
+            </td>
+            <td>
+                <?php
+                $date=date_create($user->dibuat);
+                echo date_format($date,"Y-m-d");
+                ?>
+            </td>
         </tr>
         @endforeach
     </tbody>

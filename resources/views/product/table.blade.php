@@ -27,7 +27,12 @@
             <td>{{ $user->name }}</td>
             <td>{{ $user->store_name }}</td>
             <td>{{ $user->description }}</td>
-            <td>{{ $user->cost }}</td>
+            <td>
+                <?php
+                $rupiah=number_format($user->cost,2,',','.');
+                echo 'Rp '.$rupiah;
+                ?>
+            </td>
         </tr>
         @endforeach
     </tbody>
